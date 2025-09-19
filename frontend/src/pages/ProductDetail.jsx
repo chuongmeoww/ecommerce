@@ -1,3 +1,4 @@
+// src/pages/ProductDetail.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
@@ -5,7 +6,6 @@ import ProductCard from '../components/ProductCard';
 import StarRating from '../components/StarRating';
 import { addItem as addToCart } from '../services/cart';
 
-/* ========= helpers ========= */
 const imgOf = (im) => (typeof im === 'string' ? im : im?.url);
 function discountPct(base, sale) {
   if (!base || !sale || sale >= base) return null;
@@ -34,7 +34,6 @@ function inStock(product, variant) {
   return (product?.stock || 0) > 0;
 }
 
-/* ========= small UI blocks ========= */
 function PriceBlock({ product, variant }) {
   const unit = finalUnitPrice(product, variant);
   const base = basePrice(product, variant);
@@ -45,11 +44,7 @@ function PriceBlock({ product, variant }) {
       {base > unit && (
         <>
           <div className="line-through text-gray-500">{Number(base).toLocaleString()}₫</div>
-          {pct ? (
-            <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-semibold">
-              -{pct}%
-            </span>
-          ) : null}
+          {pct ? <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-semibold">-{pct}%</span> : null}
         </>
       )}
     </div>
@@ -132,39 +127,31 @@ function RatingSummary({ product, localReviews }) {
   return (
     <div className="flex items-center gap-2">
       <StarRating value={avg} readOnly size={18} />
-      <span className="text-sm text-gray-600">
-        {count ? `${avg.toFixed(1)} / 5 (${count})` : 'Chưa có đánh giá'}
-      </span>
+      <span className="text-sm text-gray-600">{count ? `${avg.toFixed(1)} / 5 (${count})` : 'Chưa có đánh giá'}</span>
     </div>
   );
 }
 
-/* ========= main ========= */
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  // state chính
   const [p, setP] = useState(null);
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // chọn biến thể
   const { colors, sizes, variants } = useMemo(() => deriveOptions(p || {}), [p]);
   const [color, setColor] = useState('');
   const [size, setSize] = useState('');
   const [qty, setQty] = useState(1);
 
-  // review local
   const [localReviews, setLocalReviews] = useState([]);
   const [reviewForm, setReviewForm] = useState({ rating: 5, name: '', content: '' });
 
-  // ảnh
   const images = p?.images?.length
     ? p.images
     : [{ url: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1600&auto=format&fit=crop' }];
 
-  // variant đã chọn
   const selectedVariant = useMemo(() => {
     if (!variants.length) return null;
     return (
@@ -174,7 +161,7 @@ export default function ProductDetail() {
     );
   }, [variants, color, size]);
 
-  // ✅ hook này PHẢI đặt trước mọi return
+  // ✅ HOOK này đặt trước mọi return
   const availableSizes = useMemo(() => {
     if (!variants.length || !color) return sizes;
     const set = new Set(
@@ -187,7 +174,6 @@ export default function ProductDetail() {
     inStock(p, selectedVariant) &&
     (!variants.length || (size || colors.length === 0));
 
-  // call API
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -208,7 +194,6 @@ export default function ProductDetail() {
     return () => { alive = false; };
   }, [slug, navigate]);
 
-  // hành động
   const onAddToCart = () => {
     if (!p) return;
     if (variants.length && !size && sizes.length) {
@@ -230,24 +215,19 @@ export default function ProductDetail() {
       color: color || '',
       sku: selectedVariant?.sku || '',
     };
-    addToCart(item); // services/cart đã hỗ trợ object
+    addToCart(item);
     alert('Đã thêm vào giỏ');
   };
 
   const submitReview = (e) => {
     e.preventDefault();
-    const r = {
-      ...reviewForm,
-      rating: Number(reviewForm.rating) || 5,
-      createdAt: new Date().toISOString(),
-    };
+    const r = { ...reviewForm, rating: Number(reviewForm.rating) || 5, createdAt: new Date().toISOString() };
     if (!r.name || !r.content) return alert('Vui lòng nhập tên và nội dung đánh giá.');
     setLocalReviews(prev => [r, ...prev]);
     setReviewForm({ rating: 5, name: '', content: '' });
-    // TODO: POST /api/products/:id/reviews
   };
 
-  /* ====== các return có điều kiện CHỈ đặt sau tất cả hooks ====== */
+  // ====== return chỉ nằm sau tất cả hooks ======
   if (loading) {
     return (
       <div className="max-w-screen-2xl mx-auto px-4 py-6">
@@ -289,23 +269,16 @@ export default function ProductDetail() {
 
       {/* main */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
-        {/* gallery */}
         <div className="md:sticky md:top-24 h-max">
           <Gallery images={images} />
         </div>
 
-        {/* info */}
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold">{p.name}</h1>
           {p.brand && <div className="mt-1 text-gray-500 text-sm">Thương hiệu: {p.brand}</div>}
 
-          <div className="mt-2">
-            <RatingSummary product={p} localReviews={localReviews} />
-          </div>
-
-          <div className="mt-3">
-            <PriceBlock product={p} variant={selectedVariant} />
-          </div>
+          <div className="mt-2"><RatingSummary product={p} localReviews={localReviews} /></div>
+          <div className="mt-3"><PriceBlock product={p} variant={selectedVariant} /></div>
 
           {!!colors.length && (
             <div className="mt-4">
@@ -370,20 +343,8 @@ export default function ProductDetail() {
               <button className="px-3 py-2 hover:bg-gray-50" onClick={() => setQty(q => q + 1)}>+</button>
             </div>
 
-            <button
-              onClick={onAddToCart}
-              disabled={!canBuy}
-              className="flex-1 px-4 py-3 rounded-xl bg-black text-white font-medium hover:opacity-90 disabled:opacity-50"
-            >
-              Thêm vào giỏ
-            </button>
-            <button
-              onClick={() => { onAddToCart(); navigate('/cart'); }}
-              disabled={!canBuy}
-              className="px-4 py-3 rounded-xl border font-medium hover:bg-gray-50 disabled:opacity-50"
-            >
-              Mua ngay
-            </button>
+            <button onClick={onAddToCart} disabled={!canBuy} className="flex-1 px-4 py-3 rounded-xl bg-black text-white font-medium hover:opacity-90 disabled:opacity-50">Thêm vào giỏ</button>
+            <button onClick={() => { onAddToCart(); navigate('/cart'); }} disabled={!canBuy} className="px-4 py-3 rounded-xl border font-medium hover:bg-gray-50 disabled:opacity-50">Mua ngay</button>
           </div>
 
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
@@ -441,9 +402,7 @@ export default function ProductDetail() {
               <div className="md:col-span-2">
                 <div className="text-sm text-gray-600 mb-1">Chấm sao</div>
                 <StarRating value={reviewForm.rating} onChange={(v) => setReviewForm(f => ({ ...f, rating: v }))} />
-                <button className="mt-3 w-full px-4 py-2 rounded-xl bg-black text-white font-medium hover:opacity-90">
-                  Gửi đánh giá
-                </button>
+                <button className="mt-3 w-full px-4 py-2 rounded-xl bg-black text-white font-medium hover:opacity-90">Gửi đánh giá</button>
                 <p className="text-xs text-gray-500 mt-2">(* Demo UI — sẽ nối API reviews sau)</p>
               </div>
             </form>

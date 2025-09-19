@@ -1,11 +1,6 @@
 // src/components/StarRating.jsx
 import { useEffect, useMemo, useState } from 'react';
 
-/**
- * Safe StarRating:
- * - KHÔNG call hook theo điều kiện.
- * - Nếu readOnly=true: chỉ vô hiệu hoá click, KHÔNG return sớm trước khi hook chạy.
- */
 export default function StarRating({ value = 0, onChange, readOnly = false, size = 18 }) {
   const [internal, setInternal] = useState(value);
   useEffect(() => { setInternal(value); }, [value]);

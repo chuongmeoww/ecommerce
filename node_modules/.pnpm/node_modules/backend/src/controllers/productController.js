@@ -93,7 +93,9 @@ export const listProducts = async (req, res) => {
 
   const [items, total, facets] = await Promise.all([
     Product.find(filter)
-      .select('name slug images price salePrice brand category collection tags sold ratingAvg ratingCount createdAt')
+      // .select('name slug images price salePrice brand category collection tags sold ratingAvg ratingCount createdAt')
+      .select('_id name slug images price salePrice brand category collection tags sold ratingAvg ratingCount createdAt')
+
       .sort(buildSort(sort))
       .skip(skip).limit(lim).lean(),
     Product.countDocuments(filter),

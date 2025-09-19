@@ -19,6 +19,8 @@
 //   );
 // }
 import { Link, Outlet } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+
 
 export default function AdminLayout() {
   return (
@@ -29,6 +31,8 @@ export default function AdminLayout() {
           <Link to="/admin/products" className="btn-ghost block text-center">Sản phẩm</Link>
           <Link to="/admin/products/new" className="btn-ghost block text-center">Thêm sản phẩm</Link>
           <Link to="/admin/users" className="btn-ghost block text-center">Người dùng</Link>
+
+          <NavLink to="/admin/orders" className="...">Đơn hàng</NavLink>
         </nav>
       </aside>
       <main><Outlet /></main>

@@ -15,23 +15,16 @@ export const getItems = getCart;
 export function clearCart() { write([]); }
 export const clear = clearCart;
 
-/**
- * Thêm 1 dòng giỏ.
- * Hỗ trợ 2 kiểu gọi:
- *  - addItem(product, qty = 1, size?)
- *  - addItem(lineObject) // { productId, slug, name, price, qty, image, size?, color?, sku? }
- */
+/** addItem(product, qty, size)  |  addItem(lineObject) */
 export function addItem(input, qty = 1, size) {
   const cart = read();
-
-  const isLine = input && (input.productId || input.price) && !input.images; // đoán là line object
+  const isLine = input && (input.productId || input.price) && !input.images;
   let line;
 
   if (isLine) {
     const sizeVal = input.size ?? size ?? null;
     const qtyVal = Math.max(1, Number(input.qty ?? qty) || 1);
     const priceVal = Number(input.price || 0);
-
     line = {
       id: `${input.slug}__${sizeVal || ''}`,
       productId: input.productId ?? null,
@@ -48,10 +41,9 @@ export function addItem(input, qty = 1, size) {
     const priceVal = Number(input?.salePrice || input?.price || 0);
     const sizeVal = size || null;
     const qtyVal = Math.max(1, Number(qty) || 1);
-
     line = {
       id: `${input.slug}__${sizeVal || ''}`,
-      productId: input?._id || input?.id || null, // để Checkout tạo đơn
+      productId: input?._id || input?.id || null,
       slug: input.slug,
       name: input.name,
       size: sizeVal,
@@ -96,7 +88,6 @@ export function totalPrice() {
   return read().reduce((s, x) => s + Number(x.price || 0) * Number(x.qty || 0), 0);
 }
 
-// Default export (để Checkout import cart kiểu object)
 const cartDefault = {
   add: addItem,
   addItem,

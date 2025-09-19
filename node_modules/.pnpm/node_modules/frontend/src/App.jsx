@@ -31,6 +31,11 @@ import ProductForm from './pages/admin/ProductForm';
 import UsersList from './pages/admin/UsersList';
 import UserEdit from './pages/admin/UserEdit';
 
+
+import AdminOrdersList from './pages/admin/AdminOrdersList';
+import AdminOrderDetail from './pages/admin/AdminOrderDetail';
+
+
 function NotFound() { /* giữ nguyên như bạn */ return (
   <div className="max-w-7xl mx-auto px-4 py-8">
     <h1 className="text-2xl font-semibold mb-2">404</h1>
@@ -70,15 +75,19 @@ export default function App() {
 
               {/* Admin */}
               <Route element={<AdminRoute />}>
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<Navigate to="products" replace />} />
-                  <Route path="products" element={<ProductsList />} />
-                  <Route path="products/new" element={<ProductForm />} />
-                  <Route path="products/:id" element={<ProductForm />} />
-                  <Route path="users" element={<UsersList />} />
-                  <Route path="users/:id" element={<UserEdit />} />
-                </Route>
-              </Route>
+  <Route path="/admin" element={<AdminLayout />}>
+    <Route index element={<Navigate to="products" replace />} />
+    <Route path="products" element={<ProductsList />} />
+    <Route path="products/new" element={<ProductForm />} />
+    <Route path="products/:id" element={<ProductForm />} />
+    <Route path="users" element={<UsersList />} />
+    <Route path="users/:id" element={<UserEdit />} />
+    {/* 👇 2 route mới */}
+    <Route path="orders" element={<AdminOrdersList />} />
+    <Route path="orders/:id" element={<AdminOrderDetail />} />
+  </Route>
+</Route>
+
 
               {/* Sanity + 404 */}
               <Route path="/_ping" element={<Ping />} />
