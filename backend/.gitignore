@@ -6,3 +6,11 @@ build
 .vscode
 .DS_Store
 uploads
+node_modules
+dist
+build
+.env
+.env.local
+.vscode
+.DS_Store
+uploads

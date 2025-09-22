@@ -32,3 +32,10 @@ build
 .env.local
 .vscode
 .DS_Store
+node_modules
+dist
+build
+.env
+.env.local
+.vscode
+.DS_Store
