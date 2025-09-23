@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createOrder } from '../services/orders';
 import cart from '../services/cart'; // yêu cầu: cart item có field productId
 import { useAuth } from '../context/AuthContext';
-
+import { applyCoupon } from '../services/coupons';
 // Định dạng tiền
 const fmt = (n) => (Number(n || 0)).toLocaleString('vi-VN') + '₫';
 
@@ -15,6 +15,8 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
   const [coupon, setCoupon] = useState(''); // TODO: hook apply coupon (API /coupons/apply)
+
+  const [couponRes, setCouponRes] = useState(null);
 
   const [address, setAddress] = useState({
     fullName: user?.name || '',
@@ -32,6 +34,8 @@ export default function Checkout() {
     [items]
   );
 
+  const discount = couponRes?.discount || 0;          // số tiền giảm từ mã
+const total = Math.max(0, subtotal - discount);     // nếu có shippingFee thì cộng thêm vào đây
   const canSubmit =
     items.length > 0 &&
     address.fullName.trim().length >= 2 &&
@@ -58,7 +62,9 @@ export default function Checkout() {
       })),
       shippingAddress: { ...address },
       note: note || undefined,
-      couponCode: coupon || undefined, // TODO: khi có endpoint apply coupon, tính discount trước
+      // couponCode: coupon || undefined, // TODO: khi có endpoint apply coupon, tính discount trước
+      couponCode: couponRes?.coupon?.code || coupon || undefined,
+
     };
 
     try {
@@ -116,15 +122,30 @@ export default function Checkout() {
         {/* Coupon – điểm móc route sau sẽ nối API /coupons/apply */}
         <div className="grid sm:grid-cols-[1fr_auto] gap-3">
           <Field label="Mã giảm giá">
-            <input className="input" placeholder="Nhập mã (nếu có)"
-              value={coupon} onChange={e=>setCoupon(e.target.value)}/>
+                            <input
+                  className="input"
+                  placeholder="Nhập mã (nếu có)"
+                  value={coupon}
+                  onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponRes(null); }}/>
+
           </Field>
-          <button type="button" className="btn-outline h-[42px] mt-auto"
-            // onClick={handleApplyCoupon} // TODO
-            disabled={!coupon}
-          >
-            Áp dụng
-          </button>
+          <button
+  type="button"
+  className="btn-outline h-[42px] mt-auto"
+  disabled={!coupon}
+  onClick={async () => {
+    try {
+      const res = await applyCoupon(coupon.trim(), subtotal);
+      if (!res.valid) return alert('Mã không hợp lệ');
+      setCouponRes(res);
+    } catch (e) {
+      console.error(e);
+      alert('Áp dụng mã thất bại');
+    }
+  }}
+>
+  Áp dụng
+</button>
         </div>
 
         <Field label="Ghi chú đơn hàng">
@@ -166,10 +187,11 @@ export default function Checkout() {
         </div>
 
         <div className="border-t pt-3 space-y-1 text-sm">
-          <Row label="Tạm tính" value={fmt(subtotal)} />
-          {/* TODO: khi áp coupon: <Row label="Giảm giá" value={'- ' + fmt(discount)} /> */}
-          <Row label={<b>Tổng cộng</b>} value={<b>{fmt(subtotal)}</b>} />
-        </div>
+  <Row label="Tạm tính" value={fmt(subtotal)} />
+  {discount > 0 && <Row label="Giảm giá" value={'- ' + fmt(discount)} />}
+  <Row label={<b>Tổng cộng</b>} value={<b>{fmt(total)}</b>} />
+</div>
+
       </aside>
     </div>
   );

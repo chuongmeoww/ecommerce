@@ -5,6 +5,7 @@ import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 import StarRating from '../components/StarRating';
 import { addItem as addToCart } from '../services/cart';
+import { fetchReviews, createReview } from '../services/reviews';
 
 const imgOf = (im) => (typeof im === 'string' ? im : im?.url);
 function discountPct(base, sale) {
@@ -119,17 +120,23 @@ function Accordion({ items }) {
   );
 }
 
-function RatingSummary({ product, localReviews }) {
-  const reviews = product?.reviews || [];
-  const all = [...reviews, ...localReviews];
-  const count = all.length;
-  const avg = count ? all.reduce((s, r) => s + (r.rating || 0), 0) / count : 0;
-  return (
-    <div className="flex items-center gap-2">
-      <StarRating value={avg} readOnly size={18} />
-      <span className="text-sm text-gray-600">{count ? `${avg.toFixed(1)} / 5 (${count})` : 'Chưa có đánh giá'}</span>
-    </div>
-  );
+// -function RatingSummary({ product, localReviews }) {
+// -  const reviews = product?.reviews || [];
+// -  const all = [...reviews, ...localReviews];
+// -  const count = all.length;
+// -  const avg = count ? all.reduce((s, r) => s + (r.rating || 0), 0) / count : 0;
+function RatingSummary({ reviews = [] }) {
+  const count = reviews.length;
+  const avg = count ? reviews.reduce((s, r) => s + (r.rating || 0), 0) / count : 0;
+   return (
+     <div className="flex items-center gap-2">
+       <StarRating value={avg} readOnly size={18} />
+      {/* <span className="text-sm text-gray-600">{count ? `${avg.toFixed(1)} / 5 (${count})` : 'Chưa có đánh giá'}</span> */}
+      <span className="text-sm text-gray-600">
+        {count ? `${avg.toFixed(1)} / 5 (${count})` : 'Chưa có đánh giá'}
+      </span>
+     </div>
+   );
 }
 
 export default function ProductDetail() {
@@ -146,19 +153,24 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
 
   const [localReviews, setLocalReviews] = useState([]);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, name: '', content: '' });
+  // const [reviewForm, setReviewForm] = useState({ rating: 5, name: '', content: '' });
 
+ const [reviews, setReviews] = useState([]);
+ const [reviewForm, setReviewForm] = useState({ rating: 5, name: '', content: '' });
+ const [rvLoading, setRvLoading] = useState(false);
   const images = p?.images?.length
     ? p.images
     : [{ url: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1600&auto=format&fit=crop' }];
 
   const selectedVariant = useMemo(() => {
     if (!variants.length) return null;
-    return (
-      variants.find(
-        v => (color ? v.color === color : true) && (size ? v.size === size : true)
-      ) || null
-    );
+      const exact = variants.find(
+    v => (color ? v.color === color : true) && (size ? v.size === size : true)
+  );
+  if (exact) return exact;
+  // fallback: lấy biến thể còn hàng
+  const firstInStock = variants.find(v => (v.stock || 0) > 0);
+  return firstInStock || variants[0] || null;
   }, [variants, color, size]);
 
   // ✅ HOOK này đặt trước mọi return
@@ -175,24 +187,55 @@ export default function ProductDetail() {
     (!variants.length || (size || colors.length === 0));
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const { data } = await api.get(`/products/${slug}`);
-        if (!alive) return;
-        setP(data.product);
+  let alive = true;
+  (async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get(`/products/${slug}`);
+      if (!alive) return;
 
-        const rel = await api.get(`/products/${slug}/related`);
-        if (alive) setRelated(rel?.data?.items || []);
-      } catch {
-        navigate('/collection', { replace: true });
-      } finally {
-        if (alive) setLoading(false);
+      const prod = data.product;
+      setP(prod);
+
+      /* (a) ✅ Preselect biến thể còn hàng
+         - Nếu có variants: chọn biến thể đầu tiên còn stock > 0 (nếu không có, chọn biến thể đầu tiên)
+         - Set luôn cả color/size nếu có
+         - Nếu không có variants nhưng có danh sách sizes: có thể preselect size đầu tiên (tuỳ bạn, có thể bỏ nếu muốn bắt user chọn)
+      */
+      if (Array.isArray(prod?.variants) && prod.variants.length) {
+        const vInStock = prod.variants.find(v => (v.stock || 0) > 0) || prod.variants[0];
+        if (vInStock) {
+          if (vInStock.color) setColor(vInStock.color);
+          if (vInStock.size) setSize(vInStock.size);
+        }
+      } else {
+        // Không có variants: tuỳ chọn preselect size đầu tiên (nếu bạn có mảng sizes riêng)
+        if (Array.isArray(prod?.sizes) && prod.sizes.length) {
+          setSize(prod.sizes[0]);
+        }
       }
-    })();
-    return () => { alive = false; };
-  }, [slug, navigate]);
+
+      // Related
+      const rel = await api.get(`/products/${slug}/related`);
+      if (alive) setRelated(rel?.data?.items || []);
+
+      // 🔽 Reviews thật
+      setRvLoading(true);
+      try {
+        const rv = await fetchReviews(slug, { page: 1, limit: 20 });
+        if (alive) setReviews(rv.items || []);
+      } finally {
+        if (alive) setRvLoading(false);
+      }
+    } catch {
+      navigate('/collection', { replace: true });
+    } finally {
+      if (alive) setLoading(false);
+    }
+  })();
+  return () => { alive = false; };
+}, [slug, navigate]);
+
 
   const onAddToCart = () => {
     if (!p) return;
@@ -204,28 +247,49 @@ export default function ProductDetail() {
       alert('Sản phẩm tạm hết hàng.');
       return;
     }
-    const item = {
+
+    const line = {
       productId: p._id,
       name: p.name,
       slug: p.slug,
       image: imgOf(p.images?.[0]) || '',
       price: finalUnitPrice(p, selectedVariant),
-      qty,
-      size: size || '',
-      color: color || '',
+      qty: Math.max(1, qty),
+      size: selectedVariant?.size || size || '',
+      color: selectedVariant?.color || color || '',
       sku: selectedVariant?.sku || '',
     };
-    addToCart(item);
+
+    addToCart(line);
     alert('Đã thêm vào giỏ');
   };
 
-  const submitReview = (e) => {
-    e.preventDefault();
-    const r = { ...reviewForm, rating: Number(reviewForm.rating) || 5, createdAt: new Date().toISOString() };
-    if (!r.name || !r.content) return alert('Vui lòng nhập tên và nội dung đánh giá.');
-    setLocalReviews(prev => [r, ...prev]);
-    setReviewForm({ rating: 5, name: '', content: '' });
+  // const submitReview = (e) => {
+  //   e.preventDefault();
+  //   const r = { ...reviewForm, rating: Number(reviewForm.rating) || 5, createdAt: new Date().toISOString() };
+  //   if (!r.name || !r.content) return alert('Vui lòng nhập tên và nội dung đánh giá.');
+  //   setLocalReviews(prev => [r, ...prev]);
+  //   setReviewForm({ rating: 5, name: '', content: '' });
+const submitReview = async (e) => {
+  e.preventDefault();
+  const payload = {
+    name: reviewForm.name?.trim(),
+    content: reviewForm.content?.trim(),
+    rating: Number(reviewForm.rating) || 5,
   };
+  if (!payload.name || !payload.content) {
+    alert('Vui lòng nhập tên và nội dung đánh giá.');
+    return;
+  }
+  try {
+    const rv = await createReview(slug, payload);
+    setReviews((prev) => [rv, ...prev]);            // prepend review mới
+    setReviewForm({ rating: 5, name: '', content: '' });
+  } catch (err) {
+    console.error(err);
+    alert('Gửi đánh giá thất bại. Vui lòng thử lại.');
+  }
+};
 
   // ====== return chỉ nằm sau tất cả hooks ======
   if (loading) {
@@ -277,7 +341,7 @@ export default function ProductDetail() {
           <h1 className="text-2xl md:text-3xl font-semibold">{p.name}</h1>
           {p.brand && <div className="mt-1 text-gray-500 text-sm">Thương hiệu: {p.brand}</div>}
 
-          <div className="mt-2"><RatingSummary product={p} localReviews={localReviews} /></div>
+          <div className="mt-2"><RatingSummary reviews={reviews} /></div>
           <div className="mt-3"><PriceBlock product={p} variant={selectedVariant} /></div>
 
           {!!colors.length && (
@@ -381,7 +445,7 @@ export default function ProductDetail() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold">Đánh giá</h3>
-              <RatingSummary product={p} localReviews={localReviews} />
+              <RatingSummary reviews={reviews} />
             </div>
 
             <form onSubmit={submitReview} className="rounded-xl border p-3 grid md:grid-cols-5 gap-3 bg-white">
@@ -407,21 +471,28 @@ export default function ProductDetail() {
               </div>
             </form>
 
-            <div className="mt-3 space-y-3">
-              {[...(p.reviews || []), ...localReviews].map((r, i) => (
-                <div key={i} className="rounded-xl border p-3 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{r.name || 'Khách'}</div>
-                    <StarRating value={r.rating} readOnly size={16} />
-                  </div>
-                  <div className="text-sm text-gray-700 mt-1 whitespace-pre-line">{r.content}</div>
-                  {r.createdAt && <div className="text-xs text-gray-500 mt-1">{new Date(r.createdAt).toLocaleString()}</div>}
-                </div>
-              ))}
-              {!((p.reviews || []).length || localReviews.length) && (
-                <div className="text-sm text-gray-500">Chưa có đánh giá.</div>
-              )}
-            </div>
+             <div className="mt-3 space-y-3">
+   {rvLoading ? (
+     <div className="text-sm text-gray-500">Đang tải đánh giá…</div>
+   ) : reviews.length ? (
+     reviews.map((r, i) => (
+       <div key={r._id || i} className="rounded-xl border p-3 bg-white">
+         <div className="flex items-center justify-between">
+           <div className="font-medium">{r.name || 'Khách'}</div>
+           <StarRating value={r.rating} readOnly size={16} />
+         </div>
+         <div className="text-sm text-gray-700 mt-1 whitespace-pre-line">{r.content}</div>
+         {r.createdAt && (
+           <div className="text-xs text-gray-500 mt-1">
+             {new Date(r.createdAt).toLocaleString()}
+           </div>
+         )}
+       </div>
+     ))
+   ) : (
+     <div className="text-sm text-gray-500">Chưa có đánh giá.</div>
+   )}
+ </div>
           </div>
         </div>
       </div>

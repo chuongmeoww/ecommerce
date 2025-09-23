@@ -1,77 +1,158 @@
-import { useEffect, useState } from 'react';
+// src/pages/Orders.jsx
+import { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
 import { fetchMyOrders, cancelOrder } from '../services/orders';
+import { extractError } from '../services/api';
+import { Link } from 'react-router-dom';
 
-const STATUS = {
-  pending:   { text: 'Chờ xác nhận',   cls: 'bg-amber-100 text-amber-800' },
-  confirmed: { text: 'Đã xác nhận',    cls: 'bg-blue-100 text-blue-800' },
-  shipping:  { text: 'Đang giao',      cls: 'bg-cyan-100 text-cyan-800' },
-  completed: { text: 'Hoàn tất',       cls: 'bg-emerald-100 text-emerald-700' },
-  canceled:  { text: 'Đã hủy',         cls: 'bg-gray-200 text-gray-700' },
-};
-const fmt = (n) => (Number(n || 0)).toLocaleString('vi-VN') + '₫';
+const fmtVND = (n) => (Number(n || 0)).toLocaleString('vi-VN') + '₫';
+
+function StatusBadge({ status }) {
+  const cls =
+    status === 'completed' ? 'bg-green-100 text-green-700' :
+    status === 'shipping'  ? 'bg-blue-100 text-blue-700' :
+    status === 'confirmed' ? 'bg-sky-100 text-sky-700' :
+    status === 'pending'   ? 'bg-amber-100 text-amber-700' :
+    status === 'canceled'  ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700';
+  const text =
+    status === 'completed' ? 'Hoàn tất' :
+    status === 'shipping'  ? 'Đang giao' :
+    status === 'confirmed' ? 'Đã xác nhận' :
+    status === 'pending'   ? 'Chờ xử lý' :
+    status === 'canceled'  ? 'Đã hủy' : status;
+  return <span className={`px-2 py-1 rounded text-xs font-medium ${cls}`}>{text}</span>;
+}
 
 export default function Orders() {
   const [items, setItems] = useState([]);
   const [pageInfo, setPageInfo] = useState({ page: 1, limit: 20, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
 
-  async function load(page = 1) {
+  const totalPages = useMemo(() => {
+    const { total, limit } = pageInfo;
+    if (!total || !limit) return 1;
+    return Math.max(1, Math.ceil(total / limit));
+  }, [pageInfo]);
+
+  async function load(p = 1) {
+    setErr(null);
     setLoading(true);
     try {
-      const { items, pagination } = await fetchMyOrders({ page, limit: 20 });
-      setItems(items || []);
-      setPageInfo(pagination || { page: 1, limit: 20, total: 0 });
+      const res = await fetchMyOrders({ page: p, limit: 10 });
+      setItems(res.items || []);
+      setPageInfo(res.pagination || { page: p, limit: 10, total: 0 });
+    } catch (e) {
+      setErr(extractError(e));
+      setItems([]);
+      setPageInfo({ page: 1, limit: 10, total: 0 });
     } finally {
       setLoading(false);
     }
   }
+
   useEffect(() => { load(1); }, []);
 
-  const onCancel = async (id) => {
-    if (!window.confirm('Bạn chắc muốn hủy đơn này?')) return;
-    try { await cancelOrder(id); await load(pageInfo.page); }
-    catch (e) { alert(e?.response?.data?.message || 'Không thể hủy đơn.'); }
-  };
-
-  const totalPages = Math.max(1, Math.ceil((pageInfo.total || 0) / (pageInfo.limit || 20)));
+  async function onCancel(id) {
+    if (!window.confirm('Hủy đơn này? Hàng sẽ được hoàn tồn kho.')) return;
+    try {
+      await cancelOrder(id);
+      // refresh danh sách
+      load(pageInfo.page);
+    } catch (e) {
+      const er = extractError(e);
+      alert(er.message || 'Không thể hủy đơn.');
+    }
+  }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-5xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-semibold mb-4">Đơn hàng của tôi</h1>
 
-      {loading && <div>Đang tải…</div>}
-      {!loading && !items.length && <div className="text-gray-600">Bạn chưa có đơn nào.</div>}
+      {err && (
+        <div className="mb-3 text-sm text-red-600">
+          {err.message}
+        </div>
+      )}
 
-      <div className="space-y-3">
-        {items.map(o => {
-          const s = STATUS[o.status] || { text: o.status, cls: 'bg-gray-100 text-gray-700' };
-          return (
-            <div key={o._id} className="border rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="font-medium">#{o.code || o._id}</div>
-                <div className="text-sm text-gray-600">
-                  {new Date(o.createdAt).toLocaleString('vi-VN')}
-                </div>
-              </div>
-              <span className={`px-2 py-1 rounded-full text-xs ${s.cls}`}>{s.text}</span>
-              <div className="text-right ml-auto">
-                <div className="font-semibold">{fmt(o.total)}</div>
-                {['pending','confirmed'].includes(o.status) && (
-                  <button onClick={() => onCancel(o._id)} className="btn-outline mt-2">Hủy đơn</button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 bg-neutral-100 rounded animate-pulse" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-sm text-neutral-600">
+          Bạn chưa có đơn hàng nào. <Link className="text-blue-600 hover:underline" to="/collection">Mua sắm ngay →</Link>
+        </div>
+      ) : (
+        <div className="overflow-x-auto border rounded-xl">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50 text-gray-600">
+              <tr>
+                <th className="text-left p-3">Mã đơn</th>
+                <th className="text-left p-3">Ngày đặt</th>
+                <th className="text-right p-3">Tổng tiền</th>
+                <th className="text-left p-3">Trạng thái</th>
+                <th className="text-right p-3">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((o) => (
+                <tr key={o._id} className="border-t">
+                  <td className="p-3">
+                    <div className="font-medium">{o.code || o._id.slice(-8)}</div>
+                  </td>
+                  <td className="p-3">
+                    {o.createdAt ? dayjs(o.createdAt).format('HH:mm DD/MM/YYYY') : '—'}
+                  </td>
+                  <td className="p-3 text-right font-medium">{fmtVND(o.total)}</td>
+                  <td className="p-3"><StatusBadge status={o.status} /></td>
+                  <td className="p-3 text-right space-x-2">
+                    <Link
+                      to={`/order-success?id=${o._id}&code=${encodeURIComponent(o.code || '')}`}
+                      className="px-3 py-1.5 border rounded hover:bg-gray-50"
+                      title="Xem chi tiết"
+                    >
+                      Xem
+                    </Link>
+                    {['pending', 'confirmed'].includes(o.status) && (
+                      <button
+                        onClick={() => onCancel(o._id)}
+                        className="px-3 py-1.5 border rounded text-red-600 hover:bg-red-50"
+                        title="Hủy đơn"
+                      >
+                        Hủy
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <button className="btn-outline" onClick={() => load(Math.max(1, pageInfo.page - 1))}
-            disabled={pageInfo.page <= 1}>Trước</button>
-          <div className="text-sm">Trang <b>{pageInfo.page}</b> / {totalPages}</div>
-          <button className="btn-outline" onClick={() => load(Math.min(totalPages, pageInfo.page + 1))}
-            disabled={pageInfo.page >= totalPages}>Sau</button>
+      {/* Phân trang */}
+      {items.length > 0 && (
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            className="px-3 py-2 border rounded disabled:opacity-50"
+            onClick={() => load(Math.max(1, (pageInfo.page || 1) - 1))}
+            disabled={(pageInfo.page || 1) <= 1}
+          >
+            Trang trước
+          </button>
+          <div>
+            Trang <b>{pageInfo.page || 1}</b> / {totalPages}
+          </div>
+          <button
+            className="px-3 py-2 border rounded disabled:opacity-50"
+            onClick={() => load(Math.min(totalPages, (pageInfo.page || 1) + 1))}
+            disabled={(pageInfo.page || 1) >= totalPages}
+          >
+            Trang sau
+          </button>
         </div>
       )}
     </div>

@@ -2,7 +2,8 @@
 import mongoose from 'mongoose';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
-
+import { Coupon } from '../models/Coupon.js';
+import { computeDiscount, validateCoupon } from '../utils/coupon.js';
 // tạo mã đơn đơn giản theo ngày
 function genOrderCode() {
   const d = new Date();
@@ -77,39 +78,65 @@ async function increaseSold(items) {
 // POST /orders  (Bearer)
 export const createOrder = async (req, res) => {
   const { items = [], shippingAddress, note, couponCode } = req.body || {};
+
+  // validate tối thiểu
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'items is required' });
+  }
+  if (items.some(it => !it.productId)) {
+    return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Each item must have productId' });
   }
   if (!shippingAddress?.fullName || !shippingAddress?.phone || !shippingAddress?.address) {
     return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'shippingAddress incomplete' });
   }
 
-  // tính lại subtotal từ giá/qty FE gửi (có thể thêm bước fetch giá mới từ DB nếu muốn cứng)
+  // tính tiền
   const subtotal = calcSubtotal(items);
 
-  // TODO: áp mã coupon ở đây nếu có service
-  const discount = 0;
-  const total = subtotal - discount;
+  // [COUPON] áp mã nếu có
+  let discount = 0;
+  let couponInfo = null;
+  if (couponCode) {
+    const code = String(couponCode).trim().toUpperCase();
+    const cp = await Coupon.findOne({ code });
+    const check = validateCoupon(cp, { subtotal });
+    if (!check.ok) {
+      return res.status(400).json({ code: 'COUPON_INVALID', message: check.reason });
+    }
+    discount = computeDiscount(subtotal, cp);
+    couponInfo = { code: cp.code, type: cp.type, value: cp.value, discountApplied: discount };
+    if (cp.usageLimit) {
+      cp.usedCount = (cp.usedCount || 0) + 1;
+      await cp.save();
+    }
+  }
+
+  const total = Math.max(0, subtotal - discount);
 
   // giảm tồn (nếu thiếu sẽ throw)
   await reduceStock(items);
 
-  const order = await Order.create({
+  // ❗️KHÔNG dùng biến tên "order" trước khi gán — build doc riêng
+  const doc = {
     code: genOrderCode(),
     userId: req.user?.sub || null,
     items,
     subtotal,
     discount,
     total,
+    coupon: couponInfo,
     couponCode,
     shippingAddress,
     note,
     status: 'pending',
     timeline: [{ status: 'pending', note: 'Order created' }],
-  });
+  };
 
-  res.status(201).json({ order });
+  // lưu và trả về
+  const savedOrder = await Order.create(doc);
+  res.status(201).json({ order: savedOrder });
 };
+
 
 // GET /orders/my  (Bearer)
 export const myOrders = async (req, res) => {

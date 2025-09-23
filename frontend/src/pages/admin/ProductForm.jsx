@@ -51,7 +51,8 @@ export default function ProductForm() {
         status: values.status,
         sku: values.sku || undefined
       };
-      if (editing) await api.put(`/admin/products/${id}`, payload);
+      // if (editing) await api.put(`/admin/products/${id}`, payload);
+      if (editing) await api.patch(`/admin/products/${id}`, payload);
       else await api.post(`/admin/products`, payload);
       nav('/admin/products');
     } catch (e) { setErr(extractError(e)); }

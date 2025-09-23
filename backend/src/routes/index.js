@@ -9,6 +9,7 @@ import categoryRoutes from './categoryRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
 import orderRoutes from './orderRoutes.js';
 import adminOrderRoutes from './adminOrderRoutes.js';
+import couponRoutes from './couponRoutes.js';
 const router = Router();
 router.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 router.use('/auth', authRoutes);
@@ -19,6 +20,7 @@ router.use('/', productRoutes);
 router.use('/', reviewRoutes);
 router.use('/', categoryRoutes);
 router.use('/', orderRoutes);
+router.use('/', couponRoutes);
 // admin users
 router.use('/', adminUserRoutes);
 router.use('/', adminOrderRoutes);

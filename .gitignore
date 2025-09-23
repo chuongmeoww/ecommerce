@@ -1,0 +1,23 @@
+Set-Content .gitignore @"
+# Node
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+
+# Env
+.env
+.env.*
+frontend/.env
+backend/.env
+
+# IDE/OS
+.vscode/
+.DS_Store
+Thumbs.db
+"@
+git add .gitignore

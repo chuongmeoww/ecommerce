@@ -6,6 +6,7 @@ import { fetchCategories } from '../services/category';
 import ProductCard from '../components/ProductCard';
 import CategoryPills from '../components/CategoryPills';
 import CarouselHero from '../components/CarouselHero';
+import { useAuth } from '../context/AuthContext'; // ✅ thêm
 
 function Section({ title, action, children, className = '' }) {
   return (
@@ -46,6 +47,8 @@ function SkeletonGrid({ count = 18 }) {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // ✅ thêm
+
   const [cats, setCats] = useState([]);
   const [newItems, setNewItems] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -81,6 +84,34 @@ export default function Home() {
     <div className="space-y-8 md:space-y-10 pb-10">
       <CarouselHero />
 
+      {/* ✅ Khối nút CTA ngay dưới banner */}
+      <div className="max-w-screen-2xl mx-auto px-4 -mt-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/collection"
+            className="px-5 py-3 rounded-xl bg-black text-white font-medium hover:opacity-90"
+          >
+            Mua sắm ngay
+          </Link>
+          {user ? (
+            <Link
+              to="/orders"
+              className="px-5 py-3 rounded-xl border font-medium hover:bg-gray-50"
+            >
+              Đơn hàng của tôi
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="px-5 py-3 rounded-xl border font-medium hover:bg-gray-50"
+            >
+              Đăng nhập
+            </Link>
+          )}
+        </div>
+      </div>
+      {/* ✅ hết khối CTA */}
+
       <Section
         title="Danh mục nổi bật"
         action={<Link to="/collection" className="text-sm text-neutral-600 hover:text-black">Xem tất cả</Link>}
@@ -109,7 +140,6 @@ export default function Home() {
         {loadingNew ? <SkeletonGrid count={18} /> : <ProductsGrid items={newItems} />}
       </Section>
 
-      {/* Dải theo ý thích */}
       <Section
         title="Jean bền · Giá mềm"
         action={<Link to="/collection?category=quan-jeans" className="text-sm text-neutral-600 hover:text-black">Xem tất cả</Link>}

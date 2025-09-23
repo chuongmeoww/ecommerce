@@ -1,20 +1,20 @@
-// backend/src/routes/reviewRoutes.js
 import { Router } from 'express';
-import { listReviews, createReview, deleteReview } from '../controllers/reviewController.js';
-// import { authenticate, requireAdmin } from '../middlewares/auth.js';
+import { authenticate, requireAdmin } from '../middlewares/auth.js';
+import {
+  listReviews,
+  createReview,
+  adminListReviews,
+  adminDeleteReview,
+} from '../controllers/reviewController.js';
 
 const router = Router();
 
-// Public list
-router.get('/products/:productId/reviews', listReviews);
+/** Public */
+router.get('/products/:idOrSlug/reviews', listReviews);
+router.post('/products/:idOrSlug/reviews', /* authenticate (nếu muốn bắt buộc đăng nhập) */ createReview);
 
-// Auth user tạo review (khi có auth middleware)
-// router.post('/products/:productId/reviews', authenticate, createReview);
-// Admin xoá review
-// router.delete('/admin/reviews/:reviewId', authenticate, requireAdmin, deleteReview);
-
-// TẠM (không auth) để test dễ
-router.post('/products/:productId/reviews', createReview);
-router.delete('/admin/reviews/:reviewId', deleteReview);
+/** Admin */
+router.get('/admin/reviews', /* authenticate, requireAdmin, */ adminListReviews);
+router.delete('/admin/reviews/:id', /* authenticate, requireAdmin, */ adminDeleteReview);
 
 export default router;

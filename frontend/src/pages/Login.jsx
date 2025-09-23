@@ -19,13 +19,24 @@ export default function Login() {
   const loc = useLocation();
   const [serverErr, setServerErr] = useState(null);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm({ resolver: zodResolver(schema) });
+
   const onSubmit = async (values) => {
     setServerErr(null);
     try {
+      // BE trả { user, token }
       const { data } = await api.post('/auth/login', values);
+
+      // ✅ Lưu localStorage để api interceptor đọc gắn Authorization
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('auth', JSON.stringify({ user: data.user, token: data.token }));
+
+      // ✅ Cập nhật context (nếu context bạn dùng token)
       login(data.token);
-      const to = loc.state?.from || '/';
+
+      // Điều hướng về trang trước hoặc home
+      const to = loc.state?.from?.pathname || loc.state?.from || '/';
       nav(to, { replace: true });
     } catch (e) {
       setServerErr(extractError(e));
@@ -37,9 +48,13 @@ export default function Login() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <TextInput label="Email" error={errors.email?.message} {...register('email')} />
         <TextInput label="Password" type="password" error={errors.password?.message} {...register('password')} />
-        <button disabled={isSubmitting} style={{width:'100%', padding:'10px 12px'}}>Login</button>
+        <button disabled={isSubmitting} style={{width:'100%', padding:'10px 12px'}}>
+          {isSubmitting ? 'Signing in…' : 'Login'}
+        </button>
       </form>
+
       {serverErr && <pre style={{color:'crimson', marginTop:8}}>{serverErr.message}</pre>}
+
       <div style={{marginTop:12, fontSize:14}}>
         <Link to="/forgot">Forgot password?</Link>
       </div>
