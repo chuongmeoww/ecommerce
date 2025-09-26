@@ -1,0 +1,30 @@
+/* src/admin.css */
+.cui .card { border-radius: 1rem; }
+
+
+/* Layout */
+.admin-wrap { display:grid; grid-template-columns: 260px 1fr; min-height:100vh; }
+.admin-aside { background:#0f172a; color:#e2e8f0; position:sticky; top:0; height:100vh; overflow:auto; }
+.admin-aside.collapsed { width:72px; }
+.admin-brand { padding:16px; font-weight:700; letter-spacing:1px; }
+.admin-brand .logo { background:#22c55e; color:#0f172a; padding:6px 10px; border-radius:10px; }
+
+.admin-main { display:flex; flex-direction:column; min-width:0; }
+.admin-topbar { display:flex; align-items:center; gap:8px; padding:10px 16px; background:#fff; border-bottom:1px solid #e5e7eb; position:sticky; top:0; z-index:10; }
+.admin-topbar .admin-topbar-right { display:flex; align-items:center; gap:10px; }
+.admin-user { display:flex; align-items:center; gap:10px; padding-left:10px; border-left:1px solid #e5e7eb; }
+.admin-user .avatar { width:32px; height:32px; border-radius:50%; background:#0ea5e9; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.admin-user .info { line-height:1.1; font-size:12px; color:#475569; }
+
+.admin-content { padding:18px; }
+
+/* Sidebar nav */
+.admin-nav { display:flex; flex-direction:column; gap:4px; padding:8px; }
+.admin-nav-group { margin:12px 8px 6px; font-size:12px; color:#94a3b8; text-transform:uppercase; }
+.admin-navlink { color:#cbd5e1; padding:8px 10px; border-radius:8px; text-decoration:none; }
+.admin-navlink:hover { background:#111827; color:#fff; }
+.admin-navlink.active { background:#22c55e; color:#0f172a; font-weight:600; }
+
+/* Buttons (reuse your tailwind utilities if needed) */
+.btn-ghost { padding:6px 10px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
+.btn-ghost:hover { background:#f3f4f6; }

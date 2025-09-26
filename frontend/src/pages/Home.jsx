@@ -6,11 +6,10 @@ import { fetchCategories } from '../services/category';
 import ProductCard from '../components/ProductCard';
 import CategoryPills from '../components/CategoryPills';
 import CarouselHero from '../components/CarouselHero';
-import { useAuth } from '../context/AuthContext'; // ✅ thêm
 
-function Section({ title, action, children, className = '' }) {
+function Section({ title, action, children }) {
   return (
-    <section className={`max-w-screen-2xl mx-auto px-4 ${className}`}>
+    <section className="max-w-screen-2xl mx-auto px-4">
       <div className="flex items-end justify-between mb-3">
         <h2 className="text-xl md:text-2xl font-semibold">{title}</h2>
         {action}
@@ -24,7 +23,9 @@ function ProductsGrid({ items }) {
   if (!items?.length) return <div className="text-neutral-500">Chưa có sản phẩm.</div>;
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-      {items.map((p) => <ProductCard key={p._id || p.slug} product={p} />)}
+      {items.map((p) => (
+        <ProductCard key={p._id || p.slug} product={p} />
+      ))}
     </div>
   );
 }
@@ -47,70 +48,52 @@ function SkeletonGrid({ count = 18 }) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user } = useAuth(); // ✅ thêm
-
   const [cats, setCats] = useState([]);
   const [newItems, setNewItems] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
   const [loadingNew, setLoadingNew] = useState(true);
 
+  // load categories
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
     (async () => {
       try {
         const data = await fetchCategories();
-        if (mounted) setCats(data);
+        if (alive) setCats(data);
+      } catch (e) {
+        console.error('[home] categories error:', e);
+        if (alive) setCats([]);
       } finally {
-        if (mounted) setLoadingCats(false);
+        if (alive) setLoadingCats(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => { alive = false; };
   }, []);
 
+  // load products
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
     (async () => {
       try {
-        const { data } = await api.get('/products', { params: { sort: 'latest', limit: 24 } });
-        if (mounted) setNewItems(data.items || []);
+        // Nếu BE đang lọc status=active mặc định và dữ liệu seed chưa set,
+        // dùng status=all để nhìn thấy tất cả.
+        const { data } = await api.get('/products', {
+          params: { sort: 'latest', limit: 24, status: 'all' }
+        });
+        if (alive) setNewItems(data.items || []);
+      } catch (e) {
+        console.error('[home] products error:', e);
+        if (alive) setNewItems([]);
       } finally {
-        if (mounted) setLoadingNew(false);
+        if (alive) setLoadingNew(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => { alive = false; };
   }, []);
 
   return (
     <div className="space-y-8 md:space-y-10 pb-10">
       <CarouselHero />
-
-      {/* ✅ Khối nút CTA ngay dưới banner */}
-      <div className="max-w-screen-2xl mx-auto px-4 -mt-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            to="/collection"
-            className="px-5 py-3 rounded-xl bg-black text-white font-medium hover:opacity-90"
-          >
-            Mua sắm ngay
-          </Link>
-          {user ? (
-            <Link
-              to="/orders"
-              className="px-5 py-3 rounded-xl border font-medium hover:bg-gray-50"
-            >
-              Đơn hàng của tôi
-            </Link>
-          ) : (
-            <Link
-              to="/login"
-              className="px-5 py-3 rounded-xl border font-medium hover:bg-gray-50"
-            >
-              Đăng nhập
-            </Link>
-          )}
-        </div>
-      </div>
-      {/* ✅ hết khối CTA */}
 
       <Section
         title="Danh mục nổi bật"
@@ -138,20 +121,6 @@ export default function Home() {
         action={<Link to="/collection?sort=latest" className="text-sm text-neutral-600 hover:text-black">Xem thêm</Link>}
       >
         {loadingNew ? <SkeletonGrid count={18} /> : <ProductsGrid items={newItems} />}
-      </Section>
-
-      <Section
-        title="Jean bền · Giá mềm"
-        action={<Link to="/collection?category=quan-jeans" className="text-sm text-neutral-600 hover:text-black">Xem tất cả</Link>}
-      >
-        {loadingNew ? <SkeletonGrid count={18} /> : <ProductsGrid items={newItems.slice(0, 18)} />}
-      </Section>
-
-      <Section
-        title="Sale phụ kiện"
-        action={<Link to="/collection?category=phu-kien" className="text-sm text-neutral-600 hover:text-black">Xem tất cả</Link>}
-      >
-        {loadingNew ? <SkeletonGrid count={18} /> : <ProductsGrid items={newItems.slice(6, 24)} />}
       </Section>
     </div>
   );

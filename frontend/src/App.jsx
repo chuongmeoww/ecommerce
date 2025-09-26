@@ -5,6 +5,10 @@ import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import HeaderYame from './components/HeaderYame';
 
+import CoreAdminLayout from './pages/admin/CoreAdminLayout'
+import Dashboard from './pages/admin/Dashboard'  
+
+
 // Public pages
 import Home from './pages/Home';
 import Register from './pages/Register';
@@ -14,6 +18,7 @@ import Reset from './pages/Reset';
 import ProductDetail from './pages/ProductDetail';
 import Collection from './pages/Collection';
 import Cart from './pages/Cart';
+
 
 // ⚡ Lazy load 3 trang dễ gây crash nếu thiếu service
 const Checkout = lazy(() => import('./pages/Checkout'));
@@ -74,17 +79,17 @@ export default function App() {
               </Route>
 
               {/* Admin */}
-              <Route element={<AdminRoute />}>
-  <Route path="/admin" element={<AdminLayout />}>
-    <Route index element={<Navigate to="products" replace />} />
+              {/* Admin */}
+<Route element={<AdminRoute />}>
+  <Route path="/admin" element={<CoreAdminLayout />}>
+    <Route index element={<Dashboard />} />
     <Route path="products" element={<ProductsList />} />
     <Route path="products/new" element={<ProductForm />} />
     <Route path="products/:id" element={<ProductForm />} />
-    <Route path="users" element={<UsersList />} />
-    <Route path="users/:id" element={<UserEdit />} />
-    {/* 👇 2 route mới */}
     <Route path="orders" element={<AdminOrdersList />} />
     <Route path="orders/:id" element={<AdminOrderDetail />} />
+    <Route path="users" element={<UsersList />} />
+    <Route path="users/:id" element={<UserEdit />} />
   </Route>
 </Route>
 

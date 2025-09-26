@@ -75,8 +75,8 @@ export default function Collection() {
     (async () => {
       try {
         const { data } = await api.get('/products', {
-          params: { category, collection, sort, q, minPrice, maxPrice, page, limit: LIMIT },
-        });
+  params: { collection, category, sort, q, minPrice, maxPrice, page, limit: LIMIT },
+});
         setItems(data.items || []);
         setPageInfo(data.pagination || { page, total: 0, limit: LIMIT });
       } catch (e) {

@@ -50,8 +50,8 @@ export default function AdminOrdersList() {
   const totalPages = Math.max(1, Math.ceil((pageInfo.total || 0) / (pageInfo.limit || 20)));
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-semibold mb-4">Đơn hàng</h1>
+    <div className="flex items-center justify-between mb-3">
+      <h1 className="section-h1">Đơn hàng</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-3">
