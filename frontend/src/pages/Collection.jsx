@@ -13,11 +13,19 @@ import CollectionFilterBar from '../components/CollectionFilterBar';
 
 const LIMIT = 24;
 
-function ProductsGrid({ items }) {
-  if (!items?.length) return <div className="text-neutral-500">Không có sản phẩm phù hợp.</div>;
+// function ProductsGrid({ items }) {
+//   if (!items?.length) return <div className="text-neutral-500">Không có sản phẩm phù hợp.</div>;
+//   return (
+//     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+//       {items.map((p) => <ProductCard key={p._id || p.slug} product={p} />)}
+//     </div>
+//   );
+// }
+export function ProductsGrid({ items=[] }) {
+  if (!items.length) return <div className="text-neutral-500">Chưa có sản phẩm.</div>;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-      {items.map((p) => <ProductCard key={p._id || p.slug} product={p} />)}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+      {items.map(p => <ProductCard key={p._id || p.slug} product={p} />)}
     </div>
   );
 }

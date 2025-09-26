@@ -23,12 +23,12 @@ export default function Home() {
       <section className="bg-white border-b border-[var(--border)]">
         <Container className="py-10">
           <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div>
+            {/* <div>
               <h1 className="text-3xl md:text-4xl font-bold">Mặc đẹp mỗi ngày</h1>
               <p className="text-slate-600 mt-2">Sản phẩm mới · Giao nhanh · Giá tốt</p>
-            </div>
-            <div className="rounded-2xl overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1520975922329-c7436017b07c?q=80&w=1600&auto=format&fit=crop" alt="" className="w-full h-full object-cover"/>
+            </div> */}
+            <div className="rounded overflow-hidden">
+              <img src="https://yame.vn/cdn/shop/files/sale_thang_9.jpg?v=1757675267&width=2000" alt="" className="w-full h-full object-cover"/>
             </div>
           </div>
         </Container>

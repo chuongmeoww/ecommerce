@@ -5,6 +5,10 @@ import PublicHeader from './components/layout/PublicHeader';
 import PublicFooter from './components/layout/PublicFooter';
 import ErrorBoundary from './components/ErrorBoundary';
 
+
+
+import SiteHeader from "./components/layout/SiteHeader";
+import SiteFooter from "./components/layout/SiteFooter";
 // pages
 import Home from './pages/Home';
 import Collection from './pages/Collection';
@@ -50,6 +54,7 @@ export default function App(){
       <BrowserRouter>
         <ErrorBoundary>
           <Suspense fallback={<div className="px-4 py-8">Đang tải…</div>}>
+<SiteHeader />
             <Routes>
               <Route element={<PublicLayout />}>
                 <Route index element={<Home />} />
@@ -82,6 +87,8 @@ export default function App(){
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+
+<SiteFooter />
           </Suspense>
         </ErrorBoundary>
       </BrowserRouter>

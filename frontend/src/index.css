@@ -1,36 +1,14 @@
-/* src/index.css */
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Base */
 @layer base {
   html, body, #root { height: 100%; }
-  body { @apply bg-gray-50 text-gray-800 font-sans antialiased; }
-  a { @apply text-inherit no-underline; }
+  body { @apply bg-gray-50 text-gray-800 font-sans; }
 }
 
-/* Components */
 @layer components {
-  .btn         { @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50; }
-  .btn-primary { @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 font-semibold bg-black text-white hover:opacity-90 disabled:opacity-60; }
-  .input       { @apply w-full rounded-lg border border-gray-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900; }
-  .select      { @apply input; }
-  .textarea    { @apply input min-h-[110px]; }
-  .card        { @apply rounded-xl border border-gray-200 bg-white shadow-sm; }
-  .card-hd     { @apply px-4 py-3 border-b border-gray-200 font-medium; }
-  .card-bd     { @apply p-4; }
-  .section-h1  { @apply text-[22px] font-semibold; }
-  .muted       { @apply text-sm text-gray-500; }
-  .switch      { @apply inline-flex items-center gap-2 select-none cursor-pointer; }
+  .btn-primary { @apply inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2.5 font-semibold hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed; }
+  .btn-ghost  { @apply inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2.5 hover:bg-gray-50; }
+  .input      { @apply w-full rounded-xl border border-gray-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900/20 bg-white; }
 }
-
-
-/* Ẩn scrollbar ngang không mong muốn */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Giữ layout ổn định khi hiện/ẩn scrollbar */
-html { scrollbar-gutter: stable both-edges; }
