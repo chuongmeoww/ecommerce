@@ -1,127 +1,45 @@
-// src/pages/Home.jsx
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Container from '../components/layout/Container';
+import ProductGrid from '../components/commerce/ProductGrid';
 import api from '../services/api';
-import { fetchCategories } from '../services/category';
-import ProductCard from '../components/ProductCard';
-import CategoryPills from '../components/CategoryPills';
-import CarouselHero from '../components/CarouselHero';
-
-function Section({ title, action, children }) {
-  return (
-    <section className="max-w-screen-2xl mx-auto px-4">
-      <div className="flex items-end justify-between mb-3">
-        <h2 className="text-xl md:text-2xl font-semibold">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function ProductsGrid({ items }) {
-  if (!items?.length) return <div className="text-neutral-500">Chưa có sản phẩm.</div>;
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-      {items.map((p) => (
-        <ProductCard key={p._id || p.slug} product={p} />
-      ))}
-    </div>
-  );
-}
-
-function SkeletonGrid({ count = 18 }) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="border rounded-lg overflow-hidden">
-          <div className="w-full aspect-[4/5] bg-neutral-200 animate-pulse" />
-          <div className="p-3 space-y-2">
-            <div className="h-4 bg-neutral-200 rounded w-3/4" />
-            <div className="h-3 bg-neutral-200 rounded w-1/2" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [cats, setCats] = useState([]);
   const [newItems, setNewItems] = useState([]);
-  const [loadingCats, setLoadingCats] = useState(true);
-  const [loadingNew, setLoadingNew] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // load categories
-  useEffect(() => {
-    let alive = true;
-    (async () => {
+  useEffect(()=>{
+    (async ()=>{
       try {
-        const data = await fetchCategories();
-        if (alive) setCats(data);
-      } catch (e) {
-        console.error('[home] categories error:', e);
-        if (alive) setCats([]);
+        const { data } = await api.get('/products', { params: { sort: 'latest', limit: 12 } });
+        setNewItems(data.items || []);
       } finally {
-        if (alive) setLoadingCats(false);
+        setLoading(false);
       }
     })();
-    return () => { alive = false; };
-  }, []);
-
-  // load products
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        // Nếu BE đang lọc status=active mặc định và dữ liệu seed chưa set,
-        // dùng status=all để nhìn thấy tất cả.
-        const { data } = await api.get('/products', {
-          params: { sort: 'latest', limit: 24, status: 'all' }
-        });
-        if (alive) setNewItems(data.items || []);
-      } catch (e) {
-        console.error('[home] products error:', e);
-        if (alive) setNewItems([]);
-      } finally {
-        if (alive) setLoadingNew(false);
-      }
-    })();
-    return () => { alive = false; };
-  }, []);
+  },[]);
 
   return (
-    <div className="space-y-8 md:space-y-10 pb-10">
-      <CarouselHero />
-
-      <Section
-        title="Danh mục nổi bật"
-        action={<Link to="/collection" className="text-sm text-neutral-600 hover:text-black">Xem tất cả</Link>}
-      >
-        {loadingCats ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border overflow-hidden">
-                <div className="aspect-square bg-neutral-200 animate-pulse" />
-              </div>
-            ))}
+    <div>
+      <section className="bg-white border-b border-[var(--border)]">
+        <Container className="py-10">
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold">Mặc đẹp mỗi ngày</h1>
+              <p className="text-slate-600 mt-2">Sản phẩm mới · Giao nhanh · Giá tốt</p>
+            </div>
+            <div className="rounded-2xl overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1520975922329-c7436017b07c?q=80&w=1600&auto=format&fit=crop" alt="" className="w-full h-full object-cover"/>
+            </div>
           </div>
-        ) : (
-          <CategoryPills
-            categories={cats}
-            active=""
-            onSelect={(slug) => navigate(`/collection?category=${slug}`)}
-          />
-        )}
-      </Section>
+        </Container>
+      </section>
 
-      <Section
-        title="Mới về"
-        action={<Link to="/collection?sort=latest" className="text-sm text-neutral-600 hover:text-black">Xem thêm</Link>}
-      >
-        {loadingNew ? <SkeletonGrid count={18} /> : <ProductsGrid items={newItems} />}
-      </Section>
+      <Container className="py-8 space-y-6">
+        <div className="flex items-end justify-between">
+          <h2 className="text-xl md:text-2xl font-semibold">Mới về</h2>
+        </div>
+        {loading ? <div className="text-slate-500">Đang tải…</div> : <ProductGrid items={newItems} />}
+      </Container>
     </div>
   );
 }
