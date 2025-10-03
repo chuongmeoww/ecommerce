@@ -1,40 +1,49 @@
-// src/App.jsx
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
-import { AuthProvider } from './context/AuthContext';
-import ErrorBoundary from './components/ErrorBoundary';
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { AuthProvider } from "./context/AuthContext";
 
-// ✅ Dùng 1 cặp header/footer toàn site
-import SiteHeader from './components/layout/SiteHeader';
-import SiteFooter from './components/layout/SiteFooter';
+import SiteHeader from "./components/layout/SiteHeader";
+import SiteFooter from "./components/layout/SiteFooter";
+import ErrorBoundary from "./components/ErrorBoundary";
 
-// pages
-import Home from './pages/Home';
-import Collection from './pages/Collection';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-const Checkout = lazy(() => import('./pages/Checkout'));
-const Orders = lazy(() => import('./pages/Orders'));
-const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Forgot from './pages/Forgot';
-import Reset from './pages/Reset';
-import ProtectedRoute from './components/ProtectedRoute';
+import Home from "./pages/Home";
+import Collection from "./pages/Collection";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+const Checkout = lazy(() => import("./pages/Checkout.jsx"));
+const Orders = lazy(() => import("./pages/Orders.jsx"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess.jsx"));
 
-// admin
-import AdminRoute from './components/AdminRoute';
-import AdminLayout from './pages/admin/AdminLayout';
-import ProductsList from './pages/admin/ProductsList';
-import ProductForm from './pages/admin/ProductForm';
-import AdminOrdersList from './pages/admin/AdminOrdersList';
-import AdminOrderDetail from './pages/admin/AdminOrderDetail';
-import UsersList from './pages/admin/UsersList';
-import UserEdit from './pages/admin/UserEdit';
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Forgot from "./pages/Forgot";
+import Reset from "./pages/Reset";
 
-// ✅ PublicLayout giờ chỉ còn Outlet (không render header/footer nữa)
-function PublicLayout() {
-  return <Outlet />;
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+
+import AdminLayout from "./pages/admin/AdminLayout";
+import ProductsList from "./pages/admin/ProductsList";
+import ProductForm from "./pages/admin/ProductForm";
+import AdminOrdersList from "./pages/admin/AdminOrdersList";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
+import UsersList from "./pages/admin/UsersList";
+import UserEdit from "./pages/admin/UserEdit";
+
+
+
+import Profile from "./pages/Profile";
+import AdminCouponsList from "./pages/admin/AdminCouponsList";
+
+
+function PublicChrome() {
+  return (
+    <>
+      <SiteHeader />
+      <Outlet />
+      <SiteFooter />
+    </>
+  );
 }
 
 function NotFound() {
@@ -46,12 +55,10 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ErrorBoundary>
-          {/* Header/Footer để ngoài Suspense cho mượt */}
-          <SiteHeader />
           <Suspense fallback={<div className="px-4 py-8">Đang tải…</div>}>
             <Routes>
-              {/* Public */}
-              <Route element={<PublicLayout />}>
+              {/* Public routes (có Header/Footer) */}
+              <Route element={<PublicChrome />}>
                 <Route index element={<Home />} />
                 <Route path="collection" element={<Collection />} />
                 <Route path="product/:slug" element={<ProductDetail />} />
@@ -62,14 +69,13 @@ export default function App() {
                 <Route path="register" element={<Register />} />
                 <Route path="forgot" element={<Forgot />} />
                 <Route path="reset" element={<Reset />} />
-
-                {/* Require login */}
+<Route path="profile" element={<Profile />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="orders" element={<Orders />} />
                 </Route>
               </Route>
 
-              {/* Admin */}
+              {/* Admin routes (không chèn public header/footer) */}
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<ProductsList />} />
@@ -80,13 +86,14 @@ export default function App() {
                   <Route path="orders/:id" element={<AdminOrderDetail />} />
                   <Route path="users" element={<UsersList />} />
                   <Route path="users/:id" element={<UserEdit />} />
+                  <Route path="coupons" element={<AdminCouponsList />} />
+
                 </Route>
               </Route>
 
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <SiteFooter />
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>

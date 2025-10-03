@@ -1,31 +1,125 @@
-import { Link } from "react-router-dom";
-import { Search, User, ShoppingCart, Menu, ShoppingBag } from "lucide-react";
-export default function SiteHeader(){
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import Container from "./Container";
+import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
+
+export default function SiteHeader() {
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  const isAdmin = user?.role === "admin" || user?.isAdmin === true;
+
+  function handleLogout() {
+    logout();
+    setOpen(false);
+    nav("/", { replace: true });
+  }
+
+  const linkBase =
+    "px-3 py-2 rounded-lg text-sm hover:bg-gray-100 transition";
+  const linkActive = "bg-gray-100 font-medium";
+
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center">
-          <ShoppingBag className="text-primary-500 h-6 w-6"/>
-          <span className="ml-2 text-xl font-bold text-gray-900">MERN Mart</span>
-        </Link>
-
-        <div className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-gray-900 hover:text-primary-500 text-sm">Home</Link>
-          <Link to="/collection" className="text-gray-900 hover:text-primary-500 text-sm">Shop</Link>
-          <Link to="/collection?tab=categories" className="text-gray-900 hover:text-primary-500 text-sm">Categories</Link>
-          <a className="text-gray-900 hover:text-primary-500 text-sm" href="#about">About</a>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-900 hover:text-primary-500" aria-label="Search"><Search/></button>
-          <Link to="/login" className="p-2 text-gray-900 hover:text-primary-500" aria-label="Account"><User/></Link>
-          <Link to="/cart" className="p-2 text-gray-900 hover:text-primary-500 relative" aria-label="Cart">
-            <ShoppingCart/>
-            <span className="absolute -top-1 -right-1 bg-secondary-500 text-white text-xs rounded-full h-5 w-5 grid place-items-center">3</span>
+    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
+      <Container className="h-14 flex items-center justify-between">
+        {/* Left: Logo + main nav */}
+        <div className="flex items-center gap-3">
+          <Link to="/" className="font-bold text-lg tracking-tight">
+            MERN Mart
           </Link>
-          <button className="md:hidden p-2 text-gray-900 hover:text-primary-500" aria-label="Menu"><Menu/></button>
+          <nav className="hidden md:flex items-center gap-1">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : ""}`
+              }
+              end
+            >
+              Trang chủ
+            </NavLink>
+            <NavLink
+              to="/collection"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : ""}`
+              }
+            >
+              Sản phẩm
+            </NavLink>
+            <NavLink
+              to="/collection?collection=khuyen-mai"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : ""}`
+              }
+            >
+              Khuyến mãi
+            </NavLink>
+          </nav>
         </div>
-      </div>
-    </nav>
+
+        {/* Right: actions */}
+        <div className="flex items-center gap-2">
+          <Link
+            to="/cart"
+            className="px-3 py-2 rounded-lg hover:bg-gray-100 text-sm"
+            aria-label="Giỏ hàng"
+          >
+            🛒 Giỏ hàng
+          </Link>
+
+          {!user ? (
+            <div className="flex items-center gap-2">
+              <Link className="btn-ghost text-sm" to="/login">Đăng nhập</Link>
+              <Link className="btn-primary text-sm" to="/register">Đăng ký</Link>
+            </div>
+          ) : (
+            <details
+              className="relative select-none"
+              open={open}
+              onToggle={(e) => setOpen(e.currentTarget.open)}
+            >
+              <summary className="list-none cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100 text-sm flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black text-white">
+                  {String(user.name || user.email || "U").slice(0, 1).toUpperCase()}
+                </span>
+                <span className="hidden sm:block">{user.name || user.email}</span>
+                <span className="ml-1 text-gray-500">▾</span>
+              </summary>
+              <div className="absolute right-0 mt-2 w-56 rounded-xl border bg-white shadow-soft p-1">
+                <Link
+                  to="/orders"
+                  className="block px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                  onClick={() => setOpen(false)}
+                >
+                  Đơn hàng của tôi
+                </Link>
+                <Link
+                  to="/profile"
+                  className="block px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                  onClick={() => setOpen(false)}
+                >
+                  Hồ sơ
+                </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="block px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                    onClick={() => setOpen(false)}
+                  >
+                    Trang quản trị
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-gray-50 text-red-600"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </details>
+          )}
+        </div>
+      </Container>
+    </header>
   );
 }

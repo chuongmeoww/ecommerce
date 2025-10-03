@@ -1,24 +1,26 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { Link, useLocation } from "react-router-dom";
 
-export default function AdminTopbar({ onToggleSide }) {
-  const { user, logout } = useAuth();
+export default function AdminTopbar() {
+  const { pathname } = useLocation();
+  const title = getTitle(pathname);
 
   return (
-    <header className="admin-topbar">
-      <button className="btn-ghost" onClick={onToggleSide} aria-label="Toggle sidebar">☰</button>
-      <div className="flex-1" />
-      <div className="admin-topbar-right">
-        <Link to="/" className="btn-ghost">View site</Link>
-        <div className="admin-user">
-          <div className="avatar">{String(user?.name || 'U').slice(0,1).toUpperCase()}</div>
-          <div className="info">
-            <div className="name">{user?.name || 'User'}</div>
-            <div className="role">{user?.role || 'customer'}</div>
-          </div>
-          <button className="btn-ghost" onClick={logout}>Logout</button>
-        </div>
+    <div className="h-14 px-3 md:px-5 flex items-center justify-between">
+      <div className="font-semibold">{title}</div>
+      <div className="flex items-center gap-2">
+        {pathname.startsWith("/admin/products") && (
+          <Link to="/admin/products/new" className="btn-primary text-sm">+ Thêm sản phẩm</Link>
+        )}
       </div>
-    </header>
+    </div>
   );
+}
+
+function getTitle(path) {
+  if (path === "/admin") return "Tổng quan";
+  if (path.startsWith("/admin/products")) return "Quản lý sản phẩm";
+  if (path.startsWith("/admin/orders")) return "Quản lý đơn hàng";
+  if (path.startsWith("/admin/users")) return "Quản lý người dùng";
+  if (path.startsWith("/admin/coupons")) return "Mã giảm giá";
+  return "Quản trị";
 }
